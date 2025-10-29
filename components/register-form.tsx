@@ -17,26 +17,28 @@ import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { Spinner } from "./ui/spinner"
 
-export function LoginForm({
+export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  function handleRegister(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
+    const name = formData.get("name") as string
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    authClient.signIn.email(
+    authClient.signUp.email(
       {
+        name: name,
         email: email,
         password: password,
       },
       {
-        onSuccess: () => redirect("/dashboard"),
+        onSuccess: () => redirect("/login"),
         onRequest: () => setLoading(true),
         onResponse: () => setLoading(false),
         onError: (ctx) => setError(ctx.error.message),
@@ -46,7 +48,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleRegister}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
@@ -58,11 +60,21 @@ export function LoginForm({
               </div>
               <span className="sr-only">Acme Inc.</span>
             </a>
-            <h1 className="text-xl font-bold">Welcome to Acme Inc.</h1>
+            <h1 className="text-xl font-bold">Create an Account</h1>
             <FieldDescription>
-              Don&apos;t have an account? <a href="/register">Sign up</a>
+              Already have an account? <a href="/login">Sign in</a>
             </FieldDescription>
           </div>
+          <Field>
+            <FieldLabel htmlFor="name">Name</FieldLabel>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="John Doe"
+              required
+            />
+          </Field>
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
@@ -80,6 +92,7 @@ export function LoginForm({
               name="password"
               type="password"
               required
+              minLength={8}
             />
           </Field>
           {error && (
@@ -87,7 +100,7 @@ export function LoginForm({
           )}
           <Field>
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? <Spinner /> : "Login"}
+              {loading ? <Spinner /> : "Create Account"}
             </Button>
           </Field>
           <FieldSeparator>Or</FieldSeparator>
