@@ -43,6 +43,27 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
     pedido.items
   )
 
+  function formatarTelefone(valor: string) {
+    // Remove tudo que não é número
+    const numero = valor.replace(/\D/g, '')
+    
+    // Limita a 11 dígitos (DDD + 9 dígitos)
+    const numeroLimitado = numero.slice(0, 11)
+    
+    // Aplica a máscara
+    if (numeroLimitado.length <= 10) {
+      // Formato: (XX) XXXX-XXXX
+      return numeroLimitado
+        .replace(/^(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{4})(\d)/, '$1-$2')
+    } else {
+      // Formato: (XX) XXXXX-XXXX
+      return numeroLimitado
+        .replace(/^(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2')
+    }
+  }
+
   function adicionarProduto() {
     setProdutosSelecionados([...produtosSelecionados, { produtoId: '', quantidade: 1 }])
   }
@@ -129,7 +150,11 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
                 id="telefone"
                 name="telefone"
                 defaultValue={pedido.telefone}
-                placeholder="Ex: (11) 99999-9999"
+                placeholder="(11) 99999-9999"
+                maxLength={15}
+                onChange={(e) => {
+                  e.target.value = formatarTelefone(e.target.value)
+                }}
                 required
                 disabled={isPending}
               />

@@ -12,7 +12,10 @@ interface ProdutoItem {
 const pedidoSchema = z.object({
   nomeCliente: z.string().min(1, 'Nome do cliente é obrigatório').trim(),
   endereco: z.string().min(1, 'Endereço é obrigatório').trim(),
-  telefone: z.string().min(1, 'Telefone é obrigatório').trim(),
+  telefone: z.string()
+    .min(1, 'Telefone é obrigatório')
+    .max(15, 'Telefone deve ter no máximo 15 caracteres')
+    .trim(),
   produtos: z.array(
     z.object({
       produtoId: z.string().min(1, 'Produto é obrigatório'),
