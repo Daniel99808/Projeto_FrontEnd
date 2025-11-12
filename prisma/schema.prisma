@@ -78,12 +78,35 @@ model Categorias {
 }
 
 model Produtos {
-  id          String    @id @default(uuid())
-  nome        String
-  descricao   String?
-  preco       Float
-  categoriaId String
-  categoria   Categorias @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-  criadoEm    DateTime  @default(now())
-  atualizadoEm DateTime @default(now()) @updatedAt
+  id           String         @id @default(uuid())
+  nome         String
+  descricao    String?
+  preco        Float
+  categoriaId  String
+  categoria    Categorias     @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  pedidoItems  PedidoItem[]
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @default(now()) @updatedAt
+}
+
+model Pedidos {
+  id          String       @id @default(uuid())
+  nomeCliente String
+  endereco    String
+  telefone    String
+  items       PedidoItem[]
+  criadoEm    DateTime     @default(now())
+  atualizadoEm DateTime    @default(now()) @updatedAt
+}
+
+model PedidoItem {
+  id         String   @id @default(uuid())
+  pedidoId   String
+  pedido     Pedidos  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produtoId  String
+  produto    Produtos @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  quantidade Int
+  precoUnit  Float
+
+  @@unique([pedidoId, produtoId])
 }
