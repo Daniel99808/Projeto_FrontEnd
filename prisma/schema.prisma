@@ -72,6 +72,18 @@ model Verification {
 }
 
 model Categorias {
-  id String @id @default(uuid())
-  nome String
+  id       String     @id @default(uuid())
+  nome     String
+  produtos Produtos[]
+}
+
+model Produtos {
+  id          String    @id @default(uuid())
+  nome        String
+  descricao   String?
+  preco       Float
+  categoriaId String
+  categoria   Categorias @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+  criadoEm    DateTime  @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
 }
