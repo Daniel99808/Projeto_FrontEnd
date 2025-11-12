@@ -2,32 +2,36 @@
 
 import prisma from '@/lib/prisma-client'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+
+const produtoSchema = z.object({
+  nome: z.string().min(1, 'Nome do produto é obrigatório').trim(),
+  descricao: z.string().optional(),
+  preco: z.number().positive('Preço deve ser maior que zero'),
+  categoriaId: z.string().min(1, 'Categoria é obrigatória'),
+})
 
 export async function criarProduto(formData: FormData) {
-  const nome = formData.get('nome') as string
-  const descricao = formData.get('descricao') as string
-  const preco = parseFloat(formData.get('preco') as string)
-  const categoriaId = formData.get('categoriaId') as string
-
-  if (!nome || nome.trim() === '') {
-    return { error: 'Nome do produto é obrigatório' }
+  const data = {
+    nome: formData.get('nome') as string,
+    descricao: formData.get('descricao') as string,
+    preco: parseFloat(formData.get('preco') as string),
+    categoriaId: formData.get('categoriaId') as string,
   }
 
-  if (isNaN(preco) || preco <= 0) {
-    return { error: 'Preço deve ser um valor válido maior que zero' }
-  }
+  const validation = produtoSchema.safeParse(data)
 
-  if (!categoriaId) {
-    return { error: 'Categoria é obrigatória' }
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
     await prisma.produtos.create({
       data: {
-        nome: nome.trim(),
-        descricao: descricao?.trim() || null,
-        preco,
-        categoriaId,
+        nome: validation.data.nome,
+        descricao: validation.data.descricao || null,
+        preco: validation.data.preco,
+        categoriaId: validation.data.categoriaId,
       },
     })
 
@@ -40,31 +44,27 @@ export async function criarProduto(formData: FormData) {
 }
 
 export async function editarProduto(id: string, formData: FormData) {
-  const nome = formData.get('nome') as string
-  const descricao = formData.get('descricao') as string
-  const preco = parseFloat(formData.get('preco') as string)
-  const categoriaId = formData.get('categoriaId') as string
-
-  if (!nome || nome.trim() === '') {
-    return { error: 'Nome do produto é obrigatório' }
+  const data = {
+    nome: formData.get('nome') as string,
+    descricao: formData.get('descricao') as string,
+    preco: parseFloat(formData.get('preco') as string),
+    categoriaId: formData.get('categoriaId') as string,
   }
 
-  if (isNaN(preco) || preco <= 0) {
-    return { error: 'Preço deve ser um valor válido maior que zero' }
-  }
+  const validation = produtoSchema.safeParse(data)
 
-  if (!categoriaId) {
-    return { error: 'Categoria é obrigatória' }
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
     await prisma.produtos.update({
       where: { id },
       data: {
-        nome: nome.trim(),
-        descricao: descricao?.trim() || null,
-        preco,
-        categoriaId,
+        nome: validation.data.nome,
+        descricao: validation.data.descricao || null,
+        preco: validation.data.preco,
+        categoriaId: validation.data.categoriaId,
       },
     })
 

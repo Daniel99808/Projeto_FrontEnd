@@ -2,18 +2,25 @@
 
 import prisma from '@/lib/prisma-client'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+
+const categoriaSchema = z.object({
+  nome: z.string().min(1, 'Nome da categoria é obrigatório').trim(),
+})
 
 export async function criarCategoria(formData: FormData) {
   const nome = formData.get('nome') as string
 
-  if (!nome || nome.trim() === '') {
-    return { error: 'Nome da categoria é obrigatório' }
+  const validation = categoriaSchema.safeParse({ nome })
+
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
     await prisma.categorias.create({
       data: {
-        nome: nome.trim(),
+        nome: validation.data.nome,
       },
     })
 
@@ -28,15 +35,17 @@ export async function criarCategoria(formData: FormData) {
 export async function editarCategoria(id: string, formData: FormData) {
   const nome = formData.get('nome') as string
 
-  if (!nome || nome.trim() === '') {
-    return { error: 'Nome da categoria é obrigatório' }
+  const validation = categoriaSchema.safeParse({ nome })
+
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
     await prisma.categorias.update({
       where: { id },
       data: {
-        nome: nome.trim(),
+        nome: validation.data.nome,
       },
     })
 

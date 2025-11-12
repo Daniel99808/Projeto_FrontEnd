@@ -2,11 +2,24 @@
 
 import prisma from '@/lib/prisma-client'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 
 interface ProdutoItem {
   produtoId: string
   quantidade: number
 }
+
+const pedidoSchema = z.object({
+  nomeCliente: z.string().min(1, 'Nome do cliente é obrigatório').trim(),
+  endereco: z.string().min(1, 'Endereço é obrigatório').trim(),
+  telefone: z.string().min(1, 'Telefone é obrigatório').trim(),
+  produtos: z.array(
+    z.object({
+      produtoId: z.string().min(1, 'Produto é obrigatório'),
+      quantidade: z.number().int().positive('Quantidade deve ser maior que zero'),
+    })
+  ).min(1, 'Adicione pelo menos um produto ao pedido'),
+})
 
 export async function criarPedido(
   nomeCliente: string,
@@ -14,20 +27,15 @@ export async function criarPedido(
   telefone: string,
   produtos: ProdutoItem[]
 ) {
-  if (!nomeCliente || nomeCliente.trim() === '') {
-    return { error: 'Nome do cliente é obrigatório' }
-  }
+  const validation = pedidoSchema.safeParse({
+    nomeCliente,
+    endereco,
+    telefone,
+    produtos,
+  })
 
-  if (!endereco || endereco.trim() === '') {
-    return { error: 'Endereço é obrigatório' }
-  }
-
-  if (!telefone || telefone.trim() === '') {
-    return { error: 'Telefone é obrigatório' }
-  }
-
-  if (!produtos || produtos.length === 0) {
-    return { error: 'Adicione pelo menos um produto ao pedido' }
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
@@ -35,18 +43,18 @@ export async function criarPedido(
     const produtosData = await prisma.produtos.findMany({
       where: {
         id: {
-          in: produtos.map((p) => p.produtoId),
+          in: validation.data.produtos.map((p) => p.produtoId),
         },
       },
     })
 
     const pedido = await prisma.pedidos.create({
       data: {
-        nomeCliente: nomeCliente.trim(),
-        endereco: endereco.trim(),
-        telefone: telefone.trim(),
+        nomeCliente: validation.data.nomeCliente,
+        endereco: validation.data.endereco,
+        telefone: validation.data.telefone,
         items: {
-          create: produtos.map((item) => {
+          create: validation.data.produtos.map((item) => {
             const produto = produtosData.find((p) => p.id === item.produtoId)
             return {
               produtoId: item.produtoId,
@@ -73,20 +81,15 @@ export async function editarPedido(
   telefone: string,
   produtos: ProdutoItem[]
 ) {
-  if (!nomeCliente || nomeCliente.trim() === '') {
-    return { error: 'Nome do cliente é obrigatório' }
-  }
+  const validation = pedidoSchema.safeParse({
+    nomeCliente,
+    endereco,
+    telefone,
+    produtos,
+  })
 
-  if (!endereco || endereco.trim() === '') {
-    return { error: 'Endereço é obrigatório' }
-  }
-
-  if (!telefone || telefone.trim() === '') {
-    return { error: 'Telefone é obrigatório' }
-  }
-
-  if (!produtos || produtos.length === 0) {
-    return { error: 'Adicione pelo menos um produto ao pedido' }
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message }
   }
 
   try {
@@ -94,7 +97,7 @@ export async function editarPedido(
     const produtosData = await prisma.produtos.findMany({
       where: {
         id: {
-          in: produtos.map((p) => p.produtoId),
+          in: validation.data.produtos.map((p) => p.produtoId),
         },
       },
     })
@@ -107,11 +110,11 @@ export async function editarPedido(
     await prisma.pedidos.update({
       where: { id },
       data: {
-        nomeCliente: nomeCliente.trim(),
-        endereco: endereco.trim(),
-        telefone: telefone.trim(),
+        nomeCliente: validation.data.nomeCliente,
+        endereco: validation.data.endereco,
+        telefone: validation.data.telefone,
         items: {
-          create: produtos.map((item) => {
+          create: validation.data.produtos.map((item) => {
             const produto = produtosData.find((p) => p.id === item.produtoId)
             return {
               produtoId: item.produtoId,
