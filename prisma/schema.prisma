@@ -76,6 +76,7 @@ model Categorias {
   nome     String
   slug     String     @unique
   cor      String     @default("#000000")
+  foto     String?    @default("/categorias/default.png")
   produtos Produtos[]
 }
 
@@ -84,6 +85,7 @@ model Produtos {
   nome         String
   descricao    String?
   preco        Float
+  foto         String?        @default("/produtos/default.png")
   categoriaId  String
   categoria    Categorias     @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
   pedidoItems  PedidoItem[]
