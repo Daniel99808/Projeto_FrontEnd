@@ -28,6 +28,7 @@ interface EditProdutoProps {
     descricao: string | null
     preco: number
     categoriaId: string
+    foto: string | null
   }
   categorias: Array<{ id: string; nome: string }>
 }
@@ -47,6 +48,7 @@ type ProdutoFormData = z.infer<typeof produtoSchema>
 export default function EditProduto({ produto, categorias }: EditProdutoProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [fotoUrl, setFotoUrl] = useState<string>(produto.foto || '')
 
   const { register, handleSubmit, formState: { errors } } = useForm<ProdutoFormData>({
     resolver: zodResolver(produtoSchema),
@@ -65,6 +67,7 @@ export default function EditProduto({ produto, categorias }: EditProdutoProps) {
     formData.append('descricao', data.descricao || '')
     formData.append('preco', data.preco)
     formData.append('categoriaId', data.categoriaId)
+    formData.append('foto', fotoUrl)
 
     startTransition(async () => {
       const result = await editarProduto(produto.id, formData)
@@ -157,6 +160,34 @@ export default function EditProduto({ produto, categorias }: EditProdutoProps) {
               {errors.categoriaId && (
                 <p className="text-sm text-red-500">{errors.categoriaId.message}</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="foto">Foto do Produto</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="foto"
+                  placeholder="URL da imagem (ex: /produtos/pizza.jpg)"
+                  value={fotoUrl}
+                  onChange={(e) => setFotoUrl(e.target.value)}
+                  disabled={isPending}
+                  className="flex-1"
+                />
+                {fotoUrl && (
+                  <div className="relative h-16 w-16 rounded border overflow-hidden bg-gray-50">
+                    <img
+                      src={fotoUrl}
+                      alt="Preview"
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.png'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Digite a URL da imagem ou coloque o arquivo na pasta public/produtos
+              </p>
             </div>
           </div>
           <DialogFooter>

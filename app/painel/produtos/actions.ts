@@ -9,6 +9,7 @@ const produtoSchema = z.object({
   descricao: z.string().optional(),
   preco: z.number().positive('Preço deve ser maior que zero'),
   categoriaId: z.string().min(1, 'Categoria é obrigatória'),
+  foto: z.string().optional(),
 })
 
 export async function criarProduto(formData: FormData) {
@@ -17,6 +18,7 @@ export async function criarProduto(formData: FormData) {
     descricao: formData.get('descricao') as string,
     preco: parseFloat(formData.get('preco') as string),
     categoriaId: formData.get('categoriaId') as string,
+    foto: formData.get('foto') as string,
   }
 
   const validation = produtoSchema.safeParse(data)
@@ -32,6 +34,7 @@ export async function criarProduto(formData: FormData) {
         descricao: validation.data.descricao || null,
         preco: validation.data.preco,
         categoriaId: validation.data.categoriaId,
+        foto: validation.data.foto || null,
       },
     })
 
@@ -49,6 +52,7 @@ export async function editarProduto(id: string, formData: FormData) {
     descricao: formData.get('descricao') as string,
     preco: parseFloat(formData.get('preco') as string),
     categoriaId: formData.get('categoriaId') as string,
+    foto: formData.get('foto') as string,
   }
 
   const validation = produtoSchema.safeParse(data)
@@ -65,6 +69,7 @@ export async function editarProduto(id: string, formData: FormData) {
         descricao: validation.data.descricao || null,
         preco: validation.data.preco,
         categoriaId: validation.data.categoriaId,
+        foto: validation.data.foto || null,
       },
     })
 
