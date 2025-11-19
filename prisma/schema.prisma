@@ -114,3 +114,15 @@ model PedidoItem {
 
   @@unique([pedidoId, produtoId])
 }
+
+model Banner {
+  id          String   @id @default(uuid())
+  titulo      String
+  subtitulo   String?
+  imageUrl    String
+  link        String?
+  ativo       Boolean  @default(true)
+  ordem       Int      @default(0)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
