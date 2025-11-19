@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Button } from '@/components/ui/button'
 import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function Cart() {
   const { items, totalItems, totalPrice, updateQuantity, removeItem, clearCart } = useCart()
@@ -103,9 +104,11 @@ export default function Cart() {
                   </div>
                 </div>
                 
-                <Button className="w-full h-12 text-lg bg-orange-600 hover:bg-orange-700">
-                  Finalizar Pedido
-                </Button>
+                <Link href="/checkout" className="block">
+                  <Button className="w-full h-12 text-lg bg-orange-600 hover:bg-orange-700">
+                    Finalizar Pedido
+                  </Button>
+                </Link>
                 
                 <Button
                   variant="outline"
