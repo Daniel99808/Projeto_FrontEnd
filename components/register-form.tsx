@@ -3,6 +3,9 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { useState } from "react"
 import { redirect } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -17,6 +20,14 @@ import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { Spinner } from "./ui/spinner"
 
+const registerSchema = z.object({
+  name: z.string().min(1, 'O nome é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  email: z.string().min(1, 'O email é obrigatório').email('Email inválido'),
+  password: z.string().min(1, 'A senha é obrigatória').min(8, 'A senha deve ter pelo menos 8 caracteres')
+})
+
+type RegisterFormData = z.infer<typeof registerSchema>
+
 export function RegisterForm({
   className,
   ...props
@@ -24,18 +35,17 @@ export function RegisterForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function handleRegister(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: 'onBlur'
+  })
 
+  function onSubmit(data: RegisterFormData) {
     authClient.signUp.email(
       {
-        name: name,
-        email: email,
-        password: password,
+        name: data.name,
+        email: data.email,
+        password: data.password,
       },
       {
         onSuccess: () => redirect("/login"),
@@ -48,7 +58,7 @@ export function RegisterForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form onSubmit={handleRegister}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
@@ -69,31 +79,42 @@ export function RegisterForm({
             <FieldLabel htmlFor="name">Name</FieldLabel>
             <Input
               id="name"
-              name="name"
               type="text"
               placeholder="John Doe"
-              required
+              disabled={loading}
+              aria-invalid={!!errors.name}
+              {...register('name')}
             />
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name.message}</p>
+            )}
           </Field>
           <Field>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="m@example.com"
-              required
+              disabled={loading}
+              aria-invalid={!!errors.email}
+              {...register('email')}
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
           </Field>
           <Field>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               id="password"
-              name="password"
               type="password"
-              required
-              minLength={8}
+              disabled={loading}
+              aria-invalid={!!errors.password}
+              {...register('password')}
             />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password.message}</p>
+            )}
           </Field>
           {error && (
             <div className="text-sm text-red-500 text-center">{error}</div>

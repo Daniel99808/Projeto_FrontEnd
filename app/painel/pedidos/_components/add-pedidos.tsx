@@ -16,6 +16,9 @@ import { useState, useTransition } from 'react'
 import { criarPedido } from '../actions'
 import { toast } from 'sonner'
 import { Plus, X } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 
 interface AddPedidosProps {
   produtos: Array<{ id: string; nome: string; preco: number }>
@@ -26,10 +29,26 @@ interface ProdutoSelecionado {
   quantidade: number
 }
 
+const pedidoSchema = z.object({
+  nomeCliente: z.string().min(1, 'O nome do cliente é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  endereco: z.string().min(1, 'O endereço é obrigatório').min(5, 'O endereço deve ter pelo menos 5 caracteres'),
+  telefone: z.string().min(1, 'O telefone é obrigatório').regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Formato inválido. Use: (11) 99999-9999')
+})
+
+type PedidoFormData = z.infer<typeof pedidoSchema>
+
 export default function AddPedidos({ produtos }: AddPedidosProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [produtosSelecionados, setProdutosSelecionados] = useState<ProdutoSelecionado[]>([])
+  const [produtoErros, setProdutoErros] = useState<string[]>([])
+
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<PedidoFormData>({
+    resolver: zodResolver(pedidoSchema),
+    mode: 'onBlur'
+  })
+
+  const telefoneValue = watch('telefone')
 
   function formatarTelefone(valor: string) {
     // Remove tudo que não é número
@@ -68,22 +87,46 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
       novos[index].quantidade = Number(valor)
     }
     setProdutosSelecionados(novos)
+    // Limpa erros quando atualizar
+    setProdutoErros([])
   }
 
-  async function handleSubmit(formData: FormData) {
-    const nomeCliente = formData.get('nomeCliente') as string
-    const endereco = formData.get('endereco') as string
-    const telefone = formData.get('telefone') as string
+  function validarProdutos(): boolean {
+    const erros: string[] = []
+    
+    if (produtosSelecionados.length === 0) {
+      toast.error('Adicione pelo menos um produto ao pedido')
+      return false
+    }
+
+    produtosSelecionados.forEach((item, index) => {
+      if (!item.produtoId) {
+        erros[index] = 'Selecione um produto'
+      } else if (item.quantidade < 1) {
+        erros[index] = 'Quantidade deve ser maior que zero'
+      }
+    })
+
+    setProdutoErros(erros)
+    return erros.length === 0
+  }
+
+  async function onSubmit(data: PedidoFormData) {
+    if (!validarProdutos()) {
+      return
+    }
 
     startTransition(async () => {
-      const result = await criarPedido(nomeCliente, endereco, telefone, produtosSelecionados)
+      const result = await criarPedido(data.nomeCliente, data.endereco, data.telefone, produtosSelecionados)
 
       if (result.error) {
         toast.error(result.error)
       } else {
         toast.success('Pedido criado com sucesso!')
-        setOpen(false)
+        reset()
         setProdutosSelecionados([])
+        setProdutoErros([])
+        setOpen(false)
       }
     })
   }
@@ -107,41 +150,52 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
             Crie um novo pedido com os dados do cliente e produtos.
           </DialogDescription>
         </DialogHeader>
-        <form action={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="nomeCliente">Nome do Cliente</Label>
               <Input
                 id="nomeCliente"
-                name="nomeCliente"
                 placeholder="Ex: João Silva"
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.nomeCliente}
+                {...register('nomeCliente')}
               />
+              {errors.nomeCliente && (
+                <p className="text-sm text-red-500">{errors.nomeCliente.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="endereco">Endereço</Label>
               <Input
                 id="endereco"
-                name="endereco"
                 placeholder="Ex: Rua das Flores, 123"
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.endereco}
+                {...register('endereco')}
               />
+              {errors.endereco && (
+                <p className="text-sm text-red-500">{errors.endereco.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="telefone">Telefone</Label>
               <Input
                 id="telefone"
-                name="telefone"
                 placeholder="(11) 99999-9999"
                 maxLength={15}
-                onChange={(e) => {
-                  e.target.value = formatarTelefone(e.target.value)
-                }}
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.telefone}
+                {...register('telefone', {
+                  onChange: (e) => {
+                    const formatted = formatarTelefone(e.target.value)
+                    setValue('telefone', formatted)
+                  }
+                })}
               />
+              {errors.telefone && (
+                <p className="text-sm text-red-500">{errors.telefone.message}</p>
+              )}
             </div>
 
             <div className="space-y-3 border-t pt-4">
@@ -172,7 +226,6 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
                         <select
                           value={item.produtoId}
                           onChange={(e) => atualizarProduto(index, 'produtoId', e.target.value)}
-                          required
                           disabled={isPending}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -183,6 +236,9 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
                             </option>
                           ))}
                         </select>
+                        {produtoErros[index] && (
+                          <p className="text-xs text-red-500 mt-1">{produtoErros[index]}</p>
+                        )}
                       </div>
                       <div className="w-24">
                         <Label className="text-xs">Qtd</Label>
@@ -191,7 +247,6 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
                           min="1"
                           value={item.quantidade}
                           onChange={(e) => atualizarProduto(index, 'quantidade', e.target.value)}
-                          required
                           disabled={isPending}
                         />
                       </div>
@@ -222,8 +277,10 @@ export default function AddPedidos({ produtos }: AddPedidosProps) {
               type="button"
               variant="outline"
               onClick={() => {
-                setOpen(false)
+                reset()
                 setProdutosSelecionados([])
+                setProdutoErros([])
+                setOpen(false)
               }}
               disabled={isPending}
             >

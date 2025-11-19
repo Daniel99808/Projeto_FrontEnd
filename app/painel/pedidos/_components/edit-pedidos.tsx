@@ -16,6 +16,9 @@ import { Edit, Plus, X } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { editarPedido } from '../actions'
 import { toast } from 'sonner'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 
 interface EditPedidoProps {
   pedido: {
@@ -36,12 +39,31 @@ interface ProdutoSelecionado {
   quantidade: number
 }
 
+const pedidoSchema = z.object({
+  nomeCliente: z.string().min(1, 'O nome do cliente é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  endereco: z.string().min(1, 'O endereço é obrigatório').min(5, 'O endereço deve ter pelo menos 5 caracteres'),
+  telefone: z.string().min(1, 'O telefone é obrigatório').regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Formato inválido. Use: (11) 99999-9999')
+})
+
+type PedidoFormData = z.infer<typeof pedidoSchema>
+
 export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [produtosSelecionados, setProdutosSelecionados] = useState<ProdutoSelecionado[]>(
     pedido.items
   )
+  const [produtoErros, setProdutoErros] = useState<string[]>([])
+
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<PedidoFormData>({
+    resolver: zodResolver(pedidoSchema),
+    mode: 'onBlur',
+    defaultValues: {
+      nomeCliente: pedido.nomeCliente,
+      endereco: pedido.endereco,
+      telefone: pedido.telefone
+    }
+  })
 
   function formatarTelefone(valor: string) {
     // Remove tudo que não é número
@@ -80,15 +102,36 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
       novos[index].quantidade = Number(valor)
     }
     setProdutosSelecionados(novos)
+    setProdutoErros([])
   }
 
-  async function handleSubmit(formData: FormData) {
-    const nomeCliente = formData.get('nomeCliente') as string
-    const endereco = formData.get('endereco') as string
-    const telefone = formData.get('telefone') as string
+  function validarProdutos(): boolean {
+    const erros: string[] = []
+    
+    if (produtosSelecionados.length === 0) {
+      toast.error('Adicione pelo menos um produto ao pedido')
+      return false
+    }
+
+    produtosSelecionados.forEach((item, index) => {
+      if (!item.produtoId) {
+        erros[index] = 'Selecione um produto'
+      } else if (item.quantidade < 1) {
+        erros[index] = 'Quantidade deve ser maior que zero'
+      }
+    })
+
+    setProdutoErros(erros)
+    return erros.length === 0
+  }
+
+  async function onSubmit(data: PedidoFormData) {
+    if (!validarProdutos()) {
+      return
+    }
 
     startTransition(async () => {
-      const result = await editarPedido(pedido.id, nomeCliente, endereco, telefone, produtosSelecionados)
+      const result = await editarPedido(pedido.id, data.nomeCliente, data.endereco, data.telefone, produtosSelecionados)
 
       if (result.error) {
         toast.error(result.error)
@@ -120,44 +163,52 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
             Altere as informações do pedido.
           </DialogDescription>
         </DialogHeader>
-        <form action={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="nomeCliente">Nome do Cliente</Label>
               <Input
                 id="nomeCliente"
-                name="nomeCliente"
-                defaultValue={pedido.nomeCliente}
                 placeholder="Ex: João Silva"
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.nomeCliente}
+                {...register('nomeCliente')}
               />
+              {errors.nomeCliente && (
+                <p className="text-sm text-red-500">{errors.nomeCliente.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="endereco">Endereço</Label>
               <Input
                 id="endereco"
-                name="endereco"
-                defaultValue={pedido.endereco}
                 placeholder="Ex: Rua das Flores, 123"
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.endereco}
+                {...register('endereco')}
               />
+              {errors.endereco && (
+                <p className="text-sm text-red-500">{errors.endereco.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="telefone">Telefone</Label>
               <Input
                 id="telefone"
-                name="telefone"
-                defaultValue={pedido.telefone}
                 placeholder="(11) 99999-9999"
                 maxLength={15}
-                onChange={(e) => {
-                  e.target.value = formatarTelefone(e.target.value)
-                }}
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.telefone}
+                {...register('telefone', {
+                  onChange: (e) => {
+                    const formatted = formatarTelefone(e.target.value)
+                    setValue('telefone', formatted)
+                  }
+                })}
               />
+              {errors.telefone && (
+                <p className="text-sm text-red-500">{errors.telefone.message}</p>
+              )}
             </div>
 
             <div className="space-y-3 border-t pt-4">
@@ -188,7 +239,6 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
                         <select
                           value={item.produtoId}
                           onChange={(e) => atualizarProduto(index, 'produtoId', e.target.value)}
-                          required
                           disabled={isPending}
                           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
@@ -199,6 +249,9 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
                             </option>
                           ))}
                         </select>
+                        {produtoErros[index] && (
+                          <p className="text-xs text-red-500 mt-1">{produtoErros[index]}</p>
+                        )}
                       </div>
                       <div className="w-24">
                         <Label className="text-xs">Qtd</Label>
@@ -207,7 +260,6 @@ export default function EditPedido({ pedido, produtos }: EditPedidoProps) {
                           min="1"
                           value={item.quantidade}
                           onChange={(e) => atualizarProduto(index, 'quantidade', e.target.value)}
-                          required
                           disabled={isPending}
                         />
                       </div>

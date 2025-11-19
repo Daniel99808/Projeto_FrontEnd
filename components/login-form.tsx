@@ -3,6 +3,9 @@
 import { GalleryVerticalEnd } from "lucide-react"
 import { useState } from "react"
 import { redirect } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -17,6 +20,13 @@ import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 import { Spinner } from "./ui/spinner"
 
+const loginSchema = z.object({
+  email: z.string().min(1, 'O email é obrigatório').email('Email inválido'),
+  password: z.string().min(1, 'A senha é obrigatória').min(6, 'A senha deve ter pelo menos 6 caracteres')
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
 export function LoginForm({
   className,
   ...props
@@ -24,16 +34,16 @@ export function LoginForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  function handleLogin(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onBlur'
+  })
 
+  function onSubmit(data: LoginFormData) {
     authClient.signIn.email(
       {
-        email: email,
-        password: password,
+        email: data.email,
+        password: data.password,
       },
       {
         onSuccess: () => redirect("/dashboard"),
@@ -46,7 +56,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
@@ -67,20 +77,28 @@ export function LoginForm({
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
-              name="email"
               type="email"
               placeholder="m@example.com"
-              required
+              disabled={loading}
+              aria-invalid={!!errors.email}
+              {...register('email')}
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
           </Field>
           <Field>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               id="password"
-              name="password"
               type="password"
-              required
+              disabled={loading}
+              aria-invalid={!!errors.password}
+              {...register('password')}
             />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password.message}</p>
+            )}
           </Field>
           {error && (
             <div className="text-sm text-red-500 text-center">{error}</div>

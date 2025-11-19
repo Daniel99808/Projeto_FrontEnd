@@ -16,6 +16,9 @@ import { Edit } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { editarCategoria } from '../actions'
 import { toast } from 'sonner'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
 
 interface EditCategoriaProps {
   categoria: {
@@ -24,11 +27,28 @@ interface EditCategoriaProps {
   }
 }
 
+const categoriaSchema = z.object({
+  nome: z.string().min(1, 'O nome da categoria é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres')
+})
+
+type CategoriaFormData = z.infer<typeof categoriaSchema>
+
 export default function EditCategoria({ categoria }: EditCategoriaProps) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  async function handleSubmit(formData: FormData) {
+  const { register, handleSubmit, formState: { errors } } = useForm<CategoriaFormData>({
+    resolver: zodResolver(categoriaSchema),
+    mode: 'onChange',
+    defaultValues: {
+      nome: categoria.nome
+    }
+  })
+
+  async function onSubmit(data: CategoriaFormData) {
+    const formData = new FormData()
+    formData.append('nome', data.nome)
+
     startTransition(async () => {
       const result = await editarCategoria(categoria.id, formData)
 
@@ -55,18 +75,20 @@ export default function EditCategoria({ categoria }: EditCategoriaProps) {
             Altere o nome da categoria.
           </DialogDescription>
         </DialogHeader>
-        <form action={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome da Categoria</Label>
               <Input
                 id="nome"
-                name="nome"
-                defaultValue={categoria.nome}
                 placeholder="Ex: Pizzas, Bebidas, Sobremesas..."
-                required
                 disabled={isPending}
+                aria-invalid={!!errors.nome}
+                {...register('nome')}
               />
+              {errors.nome && (
+                <p className="text-sm text-red-500">{errors.nome.message}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
