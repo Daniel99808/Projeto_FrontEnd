@@ -74,6 +74,8 @@ model Verification {
 model Categorias {
   id       String     @id @default(uuid())
   nome     String
+  slug     String     @unique
+  cor      String     @default("#000000")
   produtos Produtos[]
 }
 

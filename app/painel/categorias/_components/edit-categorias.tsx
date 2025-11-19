@@ -24,11 +24,13 @@ interface EditCategoriaProps {
   categoria: {
     id: string
     nome: string
+    cor: string
   }
 }
 
 const categoriaSchema = z.object({
-  nome: z.string().min(1, 'O nome da categoria é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres')
+  nome: z.string().min(1, 'O nome da categoria é obrigatório').min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  cor: z.string().regex(/^#[0-9A-F]{6}$/i, 'Cor inválida')
 })
 
 type CategoriaFormData = z.infer<typeof categoriaSchema>
@@ -41,13 +43,15 @@ export default function EditCategoria({ categoria }: EditCategoriaProps) {
     resolver: zodResolver(categoriaSchema),
     mode: 'onChange',
     defaultValues: {
-      nome: categoria.nome
+      nome: categoria.nome,
+      cor: categoria.cor
     }
   })
 
   async function onSubmit(data: CategoriaFormData) {
     const formData = new FormData()
     formData.append('nome', data.nome)
+    formData.append('cor', data.cor)
 
     startTransition(async () => {
       const result = await editarCategoria(categoria.id, formData)
@@ -88,6 +92,28 @@ export default function EditCategoria({ categoria }: EditCategoriaProps) {
               />
               {errors.nome && (
                 <p className="text-sm text-red-500">{errors.nome.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cor">Cor da Categoria</Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="cor"
+                  type="color"
+                  className="w-20 h-10 cursor-pointer"
+                  disabled={isPending}
+                  {...register('cor')}
+                />
+                <Input
+                  type="text"
+                  placeholder="#FF6B35"
+                  disabled={isPending}
+                  className="flex-1"
+                  {...register('cor')}
+                />
+              </div>
+              {errors.cor && (
+                <p className="text-sm text-red-500">{errors.cor.message}</p>
               )}
             </div>
           </div>
