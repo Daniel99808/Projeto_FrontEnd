@@ -10,11 +10,9 @@ export default async function Home() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-6 space-y-8">
-        <Banner />
-        <CategoriesGrid categorias={categorias} />
-      </main>
+    <div className="min-h-screen bg-white">
+      <Banner />
+      <CategoriesGrid categorias={categorias} />
     </div>
   )
 }

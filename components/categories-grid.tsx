@@ -13,12 +13,20 @@ interface CategoriesGridProps {
 
 export default function CategoriesGrid({ categorias }: CategoriesGridProps) {
   return (
-    <div className="py-12">
-      <div className="container mx-auto px-4 md:px-8">
-        <h2 className="text-3xl font-bold mb-8 text-center">Categorias</h2>
+    <section className="py-16 px-4 bg-linear-to-b from-white to-gray-50">
+      <div className="container mx-auto max-w-7xl">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Explore Nossas Categorias
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Descubra uma variedade incrível de produtos para todos os gostos
+          </p>
+        </div>
         
         {categorias.length === 0 ? (
-          <div className="text-center py-12">
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+            <div className="text-6xl mb-4">🍽️</div>
             <p className="text-gray-500 text-lg">Nenhuma categoria disponível no momento.</p>
           </div>
         ) : (
@@ -27,23 +35,24 @@ export default function CategoriesGrid({ categorias }: CategoriesGridProps) {
               <Link
                 key={categoria.id}
                 href={`/categoria/${categoria.slug}`}
-                className="group flex flex-col items-center p-6 rounded-xl transition-all hover:shadow-lg hover:-translate-y-1"
-                style={{ backgroundColor: `${categoria.cor}15` }}
+                className="group"
               >
-                <div
-                  className="w-16 h-16 rounded-full mb-3 flex items-center justify-center text-white text-2xl font-bold shadow-md"
-                  style={{ backgroundColor: categoria.cor }}
-                >
-                  {categoria.nome.charAt(0).toUpperCase()}
+                <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 flex flex-col items-center text-center h-full">
+                  <div
+                    className="w-20 h-20 md:w-24 md:h-24 rounded-full mb-4 flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-lg group-hover:scale-110 transition-transform duration-300"
+                    style={{ backgroundColor: categoria.cor }}
+                  >
+                    {categoria.nome.charAt(0).toUpperCase()}
+                  </div>
+                  <h3 className="text-base md:text-lg font-bold text-gray-800 group-hover:text-orange-600 transition-colors">
+                    {categoria.nome}
+                  </h3>
                 </div>
-                <span className="text-sm md:text-base font-semibold text-center text-gray-800 group-hover:text-gray-900">
-                  {categoria.nome}
-                </span>
               </Link>
             ))}
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }
