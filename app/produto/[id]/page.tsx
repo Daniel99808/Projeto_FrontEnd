@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma-client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import AddToCartButton from '@/components/add-to-cart-button'
 
 interface ProductPageProps {
   params: Promise<{
@@ -95,12 +95,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
               {/* Add to Cart Button */}
               <div className="space-y-3">
-                <Button 
-                  className="w-full h-14 text-lg font-semibold bg-orange-600 hover:bg-orange-700 text-white"
-                  size="lg"
-                >
-                  Adicionar ao Carrinho
-                </Button>
+                <AddToCartButton 
+                  produto={{
+                    id: produto.id,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    foto: produto.foto
+                  }}
+                />
                 <p className="text-sm text-gray-500 text-center">
                   Entrega rápida e segura
                 </p>
