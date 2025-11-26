@@ -84,7 +84,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:py-12">
       <div className="container mx-auto max-w-6xl">
         <Link 
           href="/"
@@ -94,14 +94,19 @@ export default function CheckoutPage() {
           Voltar para Home
         </Link>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
-          Finalizar Pedido
-        </h1>
+        <div className="mb-8 space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+            Finalizar Pedido
+          </h1>
+          <p className="text-sm md:text-base text-gray-600 max-w-2xl">
+            Revise seus dados e confirme as informações de entrega antes de concluir o pedido.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
           {/* Formulário */}
           <div className="lg:col-span-2">
-            <Card>
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Dados do Pedido</CardTitle>
               </CardHeader>
@@ -160,8 +165,8 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full h-12 text-lg bg-orange-600 hover:bg-orange-700"
                     disabled={isPending}
                   >
@@ -174,7 +179,7 @@ export default function CheckoutPage() {
 
           {/* Resumo do Pedido */}
           <div>
-            <Card className="sticky top-20">
+            <Card className="lg:sticky lg:top-20 shadow-sm">
               <CardHeader>
                 <CardTitle>Resumo do Pedido</CardTitle>
               </CardHeader>

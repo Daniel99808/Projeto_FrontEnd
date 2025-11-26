@@ -19,8 +19,9 @@ export default async function PainelLayout({
     headers: await headers()
   })
 
-  if (!session?.user) {
-    redirect("/login")
+  // Bloquear acesso ao painel para qualquer usuário que não seja o Caio
+  if (!session?.user || session.user.email !== 'caio@email.com') {
+    redirect("/")
   }
 
   return (

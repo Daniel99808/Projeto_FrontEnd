@@ -46,7 +46,7 @@ export function LoginForm({
         password: data.password,
       },
       {
-        onSuccess: () => redirect("/dashboard"),
+        onSuccess: () => redirect("/"),
         onRequest: () => setLoading(true),
         onResponse: () => setLoading(false),
         onError: (ctx) => setError(ctx.error.message),
